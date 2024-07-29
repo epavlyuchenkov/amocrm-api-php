@@ -446,6 +446,49 @@ class AmoCRMOAuth
         return $accountDomainModel;
     }
 
+    public function getAccountDomainByRefreshToken(AccessTokenInterface $accessToken): AccountDomainModel
+    {
+        $sharedApiDomain = $this->getSharedApiDomain($accessToken);
+
+        try {
+            $response = $this->oauthProvider->getHttpClient()->request(
+                AmoCRMApiRequest::GET_REQUEST,
+                sprintf(
+                    '%s%s%s',
+                    $this->oauthProvider->getProtocol(),
+                    $sharedApiDomain,
+                    '/oauth2/account/current/subdomain'
+                ),
+                [
+                    'headers' => ['Authorization' => 'Token ' . $accessToken->getRefreshToken()],
+                    'connect_timeout' => AmoCRMApiRequest::CONNECT_TIMEOUT,
+                    'http_errors' => false,
+                    'timeout' => self::REQUEST_TIMEOUT,
+                    'query' => [],
+                    'json' => [],
+                ]
+            );
+
+            $responseBody = (string)$response->getBody();
+            if ($response->getStatusCode() !== StatusCodeInterface::STATUS_OK) {
+                throw new AmoCRMApiErrorResponseException(
+                    'Invalid response',
+                    $response->getStatusCode(),
+                    [],
+                    $responseBody
+                );
+            }
+            $response = json_decode($responseBody, true);
+            $accountDomainModel = AccountDomainModel::fromArray($response);
+        } catch (ConnectException $e) {
+            throw new AmoCRMApiConnectExceptionException($e->getMessage(), $e->getCode());
+        } catch (GuzzleException $e) {
+            throw new AmoCRMApiHttpClientException($e->getMessage(), $e->getCode());
+        }
+
+        return $accountDomainModel;
+    }
+
     /**
      * Расшифровывает полученный одноразовый токен и возвращает модель
      *
@@ -548,5 +591,13 @@ class AmoCRMOAuth
         }
 
         return BotDisposableTokenModel::fromJwtToken($jwtToken);
+    }
+
+    private function getSharedApiDomain(AccessTokenInterface $accessToken): string
+    {
+        $token = $accessToken->getToken();
+        $payload = json_decode(base64_decode(explode('.', $token)[1]), true);
+
+        return $payload['api_domain'] ?? 'api-c.kommo.com';
     }
 }
