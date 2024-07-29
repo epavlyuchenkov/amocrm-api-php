@@ -142,10 +142,7 @@ class AmoCRMApiRequest
 
             $this->setRequestDomain($oAuthProvider->getProtocol() . $accountDomainModel->getDomain());
 
-            $res = $this->oAuthClient->getAccessTokenByRefreshToken($this->accessToken);
-            file_put_contents('answer.json', $res->getToken());
-            return $res;
-//            return $this->oAuthClient->getAccessTokenByRefreshToken($this->accessToken);
+            return $this->oAuthClient->getAccessTokenByRefreshToken($this->accessToken);
         };
     }
 
