@@ -457,10 +457,10 @@ class AmoCRMOAuth
                     '%s%s%s',
                     $this->oauthProvider->getProtocol(),
                     $sharedApiDomain,
-                    '/oauth2/account/current/subdomain'
+                    '/oauth2/account/subdomain/byrefresh'
                 ),
                 [
-                    'headers' => ['Authorization' => 'Token ' . $accessToken->getRefreshToken()],
+                    'headers' => ['Authorization' => 'Basic ' . $accessToken->getRefreshToken()],
                     'connect_timeout' => AmoCRMApiRequest::CONNECT_TIMEOUT,
                     'http_errors' => false,
                     'timeout' => self::REQUEST_TIMEOUT,
